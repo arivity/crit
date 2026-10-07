@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko" class="crit-shell-real" style="--accent: #636363;"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crit — 타래</title>
+<style>
+  :root {
+    --accent:#B26A9E;
+    color-scheme: dark;
+    accent-color: var(--accent);
+    --bg:     color-mix(in srgb, var(--accent) 5%,  #131216);
+    --panel:  color-mix(in srgb, var(--accent) 8%, #1d1b21);
+    --panel2: color-mix(in srgb, var(--accent) 10%, #26242c);
+    --line:   color-mix(in srgb, var(--accent) 18%, #34313a);
+    --text:   color-mix(in srgb, var(--accent) 5%,  #f0edf3);
+    --dim:    color-mix(in srgb, var(--accent) 12%, #9a95a0);
+    --desc:   color-mix(in srgb, var(--accent) 12%, #d1cdd8);
+  }
+  body.light {
+    color-scheme: light;
+    --bg:     color-mix(in srgb, var(--accent) 3%,  #f7f6f8);
+    --panel:  color-mix(in srgb, var(--accent) 4%,  #ffffff);
+    --panel2: color-mix(in srgb, var(--accent) 5%,  #efedf1);
+    --line:   color-mix(in srgb, var(--accent) 13%, #d9d6dd);
+    --text:   color-mix(in srgb, var(--accent) 8%, #27242a);
+    --dim:    color-mix(in srgb, var(--accent) 9%, #6f6a76);
+    --desc:   color-mix(in srgb, var(--accent) 15%, #565060);
+  }
+  * { box-sizing:border-box; }
+  html { scrollbar-width:thin; scrollbar-color: color-mix(in srgb, var(--accent) 45%, var(--line)) transparent; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; line-height:1.65; }
+  .wrap { max-width:720px; margin:0 auto; padding:20px 16px 60px; }
+
+  /* 상단 전역 메뉴 */
+  .topnav { display:flex; gap:6px; align-items:center; padding:2px 2px 0; margin-bottom:6px; padding-bottom:9px;
+    border-bottom:1px solid var(--line); }
+  .navid { display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:800;
+    letter-spacing:-.3px; margin-right:10px; padding:2px 2px; }
+  .topnav a { padding:5px 14px; border-radius:999px; font-size:12.5px;
+    color:var(--dim); text-decoration:none; border:1px solid transparent; transition:.12s; }
+  .topnav a:hover { color:var(--text); border-color:var(--line); }
+  .topnav .on { background:color-mix(in srgb, var(--accent) 16%, var(--panel2));
+    border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+    color:var(--text); font-weight:600; }
+  .navgear { margin-left:auto; display:flex; padding:6px !important; border-radius:8px !important; }
+
+  .toolbar { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center;
+    padding:10px 2px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+  .toolbar.home { grid-template-columns:auto 1fr; }
+  .toolbar.home .tleft { display:none; }
+  .toolbar.home .ttl { text-align:left; }
+  .toolbar .ttl { font-size:14px; font-weight:700; text-align:center; white-space:nowrap; }
+  .tslot { display:flex; gap:8px; align-items:center; }
+  .tleft { justify-content:flex-start; }
+  .tright { justify-content:flex-end; flex-wrap:wrap; }
+  .toolbar button { background:var(--panel2); color:var(--dim); border:1px solid var(--line);
+    border-radius:8px; padding:5px 11px; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .toolbar button:hover { color:var(--text); border-color:var(--accent); }
+  .settings { position:relative; }
+  .spanel { display:none; position:absolute; right:0; top:36px; z-index:20; width:270px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+    box-shadow:0 10px 30px #0008; }
+  .spanel.open { display:block; }
+  .spanel h4 { margin:0 0 8px; font-size:12.5px; color:var(--dim); font-weight:600; }
+  .srow { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; margin-bottom:8px; }
+  .srow input[type=color] { width:34px; height:24px; border:none; background:none; padding:0; cursor:pointer; }
+  .srow label { display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--dim); cursor:pointer; }
+  .cwrap { display:flex; align-items:center; gap:6px; }
+  .hexin { width:74px; background:var(--panel2); border:1px solid var(--line); border-radius:6px;
+    color:var(--text); font-size:12px; padding:4px 6px; font-family:Consolas,"D2Coding",monospace; }
+  input[type=radio] { appearance:none; -webkit-appearance:none; width:15px; height:15px; flex:none;
+    border:1.5px solid var(--line); background:var(--panel2); cursor:pointer;
+    margin:0 3px 0 0; vertical-align:-2px; transition:.12s; border-radius:50%; }
+  input[type=radio]:checked { background:var(--accent); border-color:var(--accent);
+    box-shadow:inset 0 0 0 3px var(--panel); }
+  input::placeholder, textarea::placeholder { color:color-mix(in srgb, var(--accent) 30%, var(--dim)); }
+
+  /* 타래 목록 */
+  .tcard { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:14px 17px; margin-bottom:10px; cursor:pointer; transition:.15s; }
+  .tcard:hover { border-color:var(--accent); transform:translateY(-1px); }
+  /* 타래 드래그 정렬: 드래그 중인 카드 자리에 점선 빈자리가 생겨서, 놓을 위치가 자연스럽게
+     비워지는 느낌을 준다 (로그 목록 드래그 정렬과 같은 방식) */
+  .tgap { border:2px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius:14px;
+    margin-bottom:10px; background:color-mix(in srgb, var(--accent) 7%, transparent); }
+  .tcard.dragging { display:none; }
+  .tghost { position:fixed; z-index:9999; pointer-events:none; opacity:.9; box-shadow:0 10px 30px #0007; margin-bottom:0; }
+  .tcard .tt { font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .tcard .tm { display:flex; gap:8px; align-items:center; margin-top:4px; font-size:11.5px; color:var(--dim); }
+  .logchip { border-radius:999px; padding:1px 9px; font-size:10.5px; flex:none;
+    background:color-mix(in srgb, var(--accent) 14%, var(--panel2));
+    border:1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); color:var(--text); }
+  .empty { color:var(--dim); font-size:13px; font-style:italic; text-align:center; padding:40px 0; }
+
+  /* 타래 뷰 (트위터식) */
+  .thread { display:none; }
+  .thead { display:flex; align-items:center; gap:10px; padding:2px 2px 12px; }
+  .thead .tt { font-size:16px; font-weight:800; letter-spacing:-.3px; flex:1; min-width:0; }
+  .gologbtn { display:flex; align-items:center; gap:6px; background:color-mix(in srgb, var(--accent) 14%, var(--panel2));
+    border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); color:var(--text);
+    border-radius:999px; padding:4px 13px; font-size:12px; cursor:pointer; font-family:inherit; flex:none; }
+  .gologbtn:hover { border-color:var(--accent); }
+  .teditbtn { flex:none; background:var(--panel2); color:var(--dim); border:1px solid var(--line);
+    border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; font-family:inherit; }
+  .teditbtn:hover { color:var(--text); border-color:var(--accent); }
+  .posts { border-top:1px solid var(--line); }
+  .post { display:flex; gap:11px; padding:13px 6px 12px; position:relative; }
+  .post::after { content:""; position:absolute; left:6px; right:6px; bottom:0; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .post:not(:last-child)::before { content:""; position:absolute; left:24px; top:48px; bottom:-14px;
+    width:2px; background:var(--line); }
+  .pav { flex:none; width:38px; height:38px; border-radius:50%; z-index:1;
+    background:color-mix(in srgb, var(--accent) 30%, var(--panel2));
+    background-size:cover; background-position:center;
+    border:1.5px solid color-mix(in srgb, var(--accent) 50%, var(--line)); }
+  .pbody { flex:1; min-width:0; }
+  .phead { display:flex; align-items:baseline; gap:7px; }
+  .pname { font-size:13.5px; font-weight:700; }
+  .ptime { font-size:11px; color:var(--dim); }
+  .ptxt { font-size:13.5px; color:var(--desc); white-space:pre-wrap; margin-top:2px; overflow-wrap:break-word; }
+  /* 게시물 이미지 (트위터식 그리드, 최대 4장) */
+  .pimgs { display:grid; gap:3px; border-radius:12px; overflow:hidden; margin-top:8px;
+    border:1px solid var(--line); }
+  .pimgs[data-n="1"] { grid-template-columns:1fr; }
+  .pimgs[data-n="2"] { grid-template-columns:1fr 1fr; }
+  .pimgs[data-n="3"] { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  .pimgs[data-n="3"] .pimg:first-child { grid-row:span 2; }
+  .pimgs[data-n="4"] { grid-template-columns:1fr 1fr; }
+  .pimg { background-size:cover; background-position:center; cursor:pointer; min-height:120px; }
+  .pimgs[data-n="1"] .pimg { aspect-ratio:16/9; min-height:0; }
+  .pdel { position:absolute; top:12px; right:8px; display:none; width:18px; height:18px;
+    border-radius:50%; background:#a84848; color:#fff; border:none; font-size:11px; line-height:1;
+    cursor:pointer; align-items:center; justify-content:center; }
+  .post:hover .pdel { display:flex; }
+
+  /* 이어쓰기 */
+  .composer { display:flex; gap:11px; padding:14px 6px 0; }
+  .composer .pav { margin-top:2px; }
+  .cbox { flex:1; }
+  .cta { width:100%; min-height:64px; background:var(--panel2); color:var(--text);
+    border:1px solid var(--line); border-radius:12px; padding:10px 13px; font-size:13.5px;
+    font-family:inherit; resize:none; outline:none; line-height:1.6; }
+  .cta:focus { border-color:var(--accent); }
+  .cprev { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .cpi { width:58px; height:58px; border-radius:9px; background-size:cover; background-position:center;
+    border:1px solid var(--line); position:relative; }
+  .cpi button { position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%;
+    background:#a84848; color:#fff; border:none; font-size:10px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  .crow2 { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .imgaddbtn { display:flex; align-items:center; gap:5px; background:none; color:var(--accent);
+    border:1px solid transparent; border-radius:8px; padding:5px 9px; font-size:12px;
+    cursor:pointer; font-family:inherit; }
+  .imgaddbtn:hover { border-color:color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  .imgaddbtn:disabled { opacity:.4; cursor:default; }
+  .postbtn { background:var(--accent); color:#fff; border:none; border-radius:999px;
+    padding:7px 20px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  /* 모달 */
+  .overlay { position:fixed; inset:0; z-index:60; background:#0008; display:flex; align-items:center; justify-content:center; }
+  .modal { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; width:340px; }
+  .modal h3 { margin:0 0 12px; font-size:15px; }
+  .modal p { margin:0 0 14px; font-size:13.5px; }
+  .mrow { display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:10px; }
+  .mrow > span:first-child { flex:none; width:64px; color:var(--dim); }
+  .mrow input[type=text] { flex:1; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:6px 9px; font-size:13px; font-family:inherit; outline:none; min-width:0; }
+  .mrow input:focus { border-color:var(--accent); }
+  .dd { position:relative; flex:1; min-width:0; }
+  .ddbtn { width:100%; display:flex; align-items:center; justify-content:space-between; gap:6px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:8px; color:var(--dim);
+    font-size:12.5px; padding:6px 10px; cursor:pointer; font-family:inherit; transition:.12s; }
+  .ddbtn:hover, .dd.open .ddbtn { border-color:var(--accent); color:var(--text); }
+  .ddchev { display:flex; transition:.15s; }
+  .dd.open .ddchev { transform:rotate(180deg); }
+  /* 로그 연결: 버튼+메뉴 대신 검색어를 바로 입력하는 인풋 - 로그가 많아지면 눌러서 스크롤
+     하는 것보다 타이핑으로 좁혀 찾는 게 빠르다 */
+  .ddinput { width:100%; box-sizing:border-box; background:var(--panel2); border:1px solid var(--line);
+    border-radius:8px; color:var(--text); font-size:12.5px; padding:6px 10px; font-family:inherit;
+    outline:none; transition:.12s; }
+  .ddinput::placeholder { color:var(--dim); }
+  .ddinput:focus, .dd.open .ddinput { border-color:var(--accent); }
+  .ddmenu { display:none; position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:70;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:5px;
+    max-height:220px; overflow-y:auto;
+    box-shadow:0 10px 26px rgba(0,0,0,.4); }
+  .dd.open .ddmenu { display:block; }
+  .ddopt { padding:6px 10px; border-radius:7px; font-size:12.5px; color:var(--dim); cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; transition:.1s; }
+  .ddopt:hover { background:var(--panel2); color:var(--text); }
+  .ddopt.on { color:var(--text); font-weight:600;
+    background:color-mix(in srgb, var(--accent) 14%, var(--panel2)); }
+  .ddopt.on::after { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .mbtns { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+  .mbtns button { background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .mbtns button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .mbtns button.danger { background:#a84848; border-color:#a84848; color:#fff; }
+</style><style>/* crit-nofocus */ *:focus, *:focus-visible { outline: none !important; box-shadow: none; }</style><style>/* crit-modal-label: 모달 라벨이 세로로 꺾이지 않게 */ .modal .mrow > span:first-child { flex: none; white-space: nowrap; }</style><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><!-- crit-font --><style>/* crit-scrollbar: 얇은 테마 스크롤바 (화살표 버튼 제거) */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 30%, var(--line)) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--accent) 48%, var(--line)); }
+*::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+*::-webkit-scrollbar-corner { background: transparent; }
+</style><style>/* crit-no-themebtn: 전역 테마 페이지는 개별 테마 버튼 불필요 */ .toolbar .settings { display: none !important; }</style><style>/* crit-nav-accent: 활성 탭·닉네임 포인트 컬러 톤 */
+html:not(.crit-embedded) .topnav .on { background: color-mix(in srgb, var(--accent) 26%, var(--panel2)) !important;
+  color: color-mix(in srgb, var(--accent) 60%, var(--text)) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) !important; }
+html:not(.crit-embedded) .navid { color: color-mix(in srgb, var(--accent) 55%, var(--text)); }
+</style><style>/* crit-badge-accent */
+.logchip { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)) !important;
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line)) !important;
+  color: color-mix(in srgb, var(--accent) 58%, var(--text)) !important; }</style><style>/* crit-nav-preheight */ html:not(.crit-embedded) .topnav { height: 54px; box-sizing: border-box; overflow: hidden; padding-top: 0 !important; padding-bottom: 0 !important; align-items: center !important; } html:not(.crit-embedded) .navid { line-height: 1 !important; } html:not(.crit-embedded) .topnav a { line-height: 1 !important; }</style><style>/* crit-gologbtn-accent */
+.gologbtn { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)) !important;
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line)) !important;
+  color: color-mix(in srgb, var(--accent) 58%, var(--text)) !important; }
+</style><style>.toolbar, .catbar, .ctl, .fadd, .fdel, #previewbtn, .gdel, .sdel, .srsz, .srot, .bctrl, .bph, .pimg .ph, .gadd, .sadd, .addbtn, .tagadd, .exaddbtn, .imgaddbtn, .pdel, .composer, .del, .tag .x, .badge .x, .teditbtn, .gologbtn, .newbtn, #trashbtn, select { display: none !important; } button:not(.linkbtn):not(.critkeep) { display: none !important; } input, textarea { pointer-events: none !important; } .sbox input, .msearch input { pointer-events: auto !important; } .mbtnrow { display: none !important; } .crit-mdview { display: block !important; } .topnav { border-bottom: none !important; flex: none !important; } #critscroll { scrollbar-gutter: stable; overflow-x: clip; } .dayview { position: static !important; top: auto !important; } .crit-pub-range { display:inline-block; width:100%; height:6px; background:var(--panel2); border-radius:999px; position:relative; } .crit-pub-range i { position:absolute; top:50%; width:14px; height:14px; border-radius:50%; background:var(--accent); border:2.5px solid color-mix(in srgb, var(--accent) 25%, var(--panel)); transform:translate(-50%,-50%); box-sizing:border-box; }</style></head>
+<body class="light preview"><nav class="topnav">
+    <span class="navid"><span class="nava" style="background-image: url(&quot;images/64dce413-e77d-497a-8c0d-9df30cb2ea1c.png&quot;);"></span></span>
+    
+    
+    
+    
+    
+    
+    
+  <a href="intro.html" onclick="event.preventDefault();location.href='intro.html?_r='+Date.now();">소개</a><a href="threads.html" class="on" onclick="event.preventDefault();location.href='threads.html?_r='+Date.now();">타래</a></nav><!-- crit-theme-early: 저장된 다크/라이트·포인트컬러를 첫 페인트 전에 적용해 기본값이 잠깐 보이는 깜빡임을 없앰 -->
+
+<div class="wrap crit-fixedbar"><div class="toolbar" id="tb">
+    <div class="tslot tleft"><button id="backbtn">← 목록</button></div>
+    <span class="ttl"></span>
+    <div class="tslot tright">
+      <button id="newbtn">+ 새 타래</button>
+      <button id="savebtn" title="변경 내용을 게시본에 반영 (GitHub 저장소 업데이트)">업데이트</button>
+      <div class="settings">
+        <button id="setbtn">테마</button>
+        
+      </div>
+    </div>
+  </div></div><div id="critscroll"><div class="wrap">
+  
+  
+
+  <div id="tlist" style="display: none;"><div class="tcard" data-tid="102"><div class="tt">베리드스타즈 1007 (2)</div>
+      <div class="tm"><span>게시물 24</span></div></div><div class="tcard" data-tid="101"><div class="tt">베리드스타즈 1007 (1)</div>
+      <div class="tm"><span>게시물 112</span></div></div></div>
+
+  <div class="thread" id="thread" style="display: block;">
+    <div class="thead">
+      <span class="tt" id="th-title">베리드스타즈 1007 (1)</span>
+      <button class="teditbtn" id="teditbtn" title="제목/로그 연결 수정 · 삭제">수정</button>
+      <button class="gologbtn" id="gologbtn" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
+        <span id="gologname"></span></button>
+    </div>
+    <div class="posts" id="posts"><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:14</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/5935cdee-bebf-4af9-9860-51ff30bdf4af.png)"></span><span class="pimg" style="background-image:url(images/6d4352e4-e838-4cc0-a3e2-694b0381a3ca.png)"></span></div><div class="ptxt"><p>저런...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:14</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/3091457c-7535-4fa3-88a5-72822213f4be.png&quot;); aspect-ratio: auto; width: 480px; height: 213px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 개웃기다 ㅅㅂ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:15</span></div>
+      <div class="ptxt"><p>키를 잘 못 눌러서 전체 스킵이 되었길래 다시 켜고 있어요 시발... 이게 무슨 일이죠?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:17</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/70818c0c-25e6-4d9b-9d56-3afc01ce162f.png&quot;); aspect-ratio: auto; width: 480px; height: 160px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 역시 이게 시작이구나 하 ㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:18</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/c46fbda2-7f05-4817-bce8-f79c1ff67a89.png)"></span><span class="pimg" style="background-image:url(images/278195ee-001b-4dfa-b52c-110e552e83f1.png)"></span></div><div class="ptxt"><p>와 화끈하네 진짜로</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:18</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/d63b9b4e-7cb2-493f-ad10-32849bc71c99.png&quot;); aspect-ratio: auto; width: 480px; height: 271px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이거 뭐하는 건데 혼성이에요?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:19</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/21876f7b-67c3-40d6-83a0-ea42b55f1847.png&quot;); aspect-ratio: auto; width: 480px; height: 218px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>싸가지없는애들이 왜 이렇게 많아?ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:19</span></div>
+      <div class="ptxt"><p>어차피 타래 한 번 더 클릭해야 되는구나 이제 귀찮으니까 스포일러 안할게요</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:20</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c1aa4666-5af4-4924-a313-e5f302ebb086.png&quot;); aspect-ratio: auto; width: 480px; height: 269px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>혼자 차카니 같긴 하신데요?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:20</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/492427a2-5383-498a-b9eb-0b5e5d68b37c.png&quot;); aspect-ratio: auto; width: 480px; height: 127px; border-radius: 10px;" data-fitted="1"></span></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:21</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/5cc043da-7acd-4c2f-bf81-e6d68a3c553d.png&quot;); aspect-ratio: auto; width: 480px; height: 271px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>잠만 관캐</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:21</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c6f5d539-e126-4992-a474-dd4cde1d5c24.png&quot;); aspect-ratio: auto; width: 480px; height: 152px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>애들아 이쁘게 좀 댓글 달아봐</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:21</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/7b853bc6-bbd4-4f12-9a41-dbed76123bde.png&quot;); aspect-ratio: auto; width: 480px; height: 269px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 연습생 서바이벌이 아닌가봐</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:22</span></div>
+      <div class="ptxt"><p>제가 여러분 너무 모르고 평범하게 아이돌 연습생 스토리인줄 알았네요</p><p>나 진심으로 배리드스타즈에 대해 알고 있는 정보가</p><p>검은방, 회색도시 만든 사람이 만든거다.</p><p>끝</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:22</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/79296bf3-9744-4f3c-8046-ba59c3d83ee4.png&quot;); aspect-ratio: auto; width: 480px; height: 281px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이분 트위터에서 많이 봄</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:23</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/666ad383-9ff1-4235-8da5-46ddae157c86.png&quot;); aspect-ratio: auto; width: 480px; height: 270px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어 씨발 무슨일?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:24</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/edf24b28-a911-4dc9-b0c2-17cab8ddb500.png&quot;); aspect-ratio: auto; width: 480px; height: 270px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>피하라고 소리지르는 거 레전드</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:24</span></div>
+      <div class="ptxt"><p>아니 근데 나 이거</p><p>갑자기 뭔가 번뜩 지나감</p><p>누가 다이소에서 뭔 무대 같은 거 보자마자</p><p>와 베리드스타즈 굿즈다 ㅋㅋ 이랬었음</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:25</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/f1525ed9-36c9-464c-b39c-9bddac4b6f20.png&quot;); aspect-ratio: auto; width: 480px; height: 229px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>얘가 주인공임?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:26</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/38d3bc24-ae82-408a-b880-a6bb6b69bb22.png&quot;); aspect-ratio: auto; width: 480px; height: 189px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>시발...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:26</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/ca804127-363e-46ad-9cb6-c70baf526a70.png&quot;); aspect-ratio: auto; width: 480px; height: 183px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 너무 무서워 어떡해</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:27</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/7dcf378d-783c-434c-87d2-d8d00c2ab075.png&quot;); aspect-ratio: auto; width: 480px; height: 225px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와 이거 류승곤이라고?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:28</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/b603d984-1cc5-49c5-9f6e-6eded5b92ff6.png)"></span><span class="pimg" style="background-image:url(images/b11797f6-7b04-4e56-9d9d-378a6c23d666.png)"></span></div><div class="ptxt"><p>슬프니 되셨어...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:28</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/666caf38-8ed3-4240-bf29-32afd3a04ad7.png&quot;); aspect-ratio: auto; width: 480px; height: 282px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>타임..</p><p>이 효과음..</p><p>회색도시에서 정보뜰때마다 나오던 효과음이잖아...</p><p>따흐흑...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:29</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/dfaada76-84d7-453b-aaab-2a9acdc0757b.png&quot;); aspect-ratio: auto; width: 480px; height: 273px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>근데 애들아 나를 너무 쳐다본다</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:29</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/09ebc3d1-765c-4720-97d9-105645d4bc89.png&quot;); aspect-ratio: auto; width: 480px; height: 279px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아니 이거 너무 리얼하다</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:30</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/df5c050d-dfd4-47e0-9ed4-2fa4910ada77.png&quot;); aspect-ratio: auto; width: 480px; height: 266px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어 그래 나도 그래 보인다</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:30</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/e3bed155-0660-4de8-9401-f928c53fef55.png&quot;); aspect-ratio: auto; width: 480px; height: 278px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아... 이 감성 너무 오랜만이야 미칠 것 같아</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:31</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/02425076-f81e-4f3a-b3b9-5c8bd908c1e1.png&quot;); aspect-ratio: auto; width: 480px; height: 171px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>일단 공략 아무것도 안 보고 하니까 걍 해볼게</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:33</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/480a458d-d670-45fc-a0c6-bcaeb167d547.png&quot;); aspect-ratio: auto; width: 480px; height: 290px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아니 시발 멘탈이</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:34</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/8a5e6cf5-20c7-4127-8d9c-54e6d14ca76c.png&quot;); aspect-ratio: auto; width: 411px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>잘생기심...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:36</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/93400fd2-62d3-469d-b882-dae79b88f222.png&quot;); aspect-ratio: auto; width: 480px; height: 231px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>눌러봤더니 이거 신기하네 ㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:37</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/7968df19-4b72-43de-9e9f-620a7f1371d9.png)"></span><span class="pimg" style="background-image:url(images/596b6f65-a1ae-4513-834c-a4b9f98884ff.png)"></span></div><div class="ptxt"><p>흠... T와 F의 선택지라니</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:37</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/39ca1e76-6a7b-4015-9bf1-98a99c271155.png&quot;); aspect-ratio: auto; width: 480px; height: 141px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>호감도 올랐닼ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:38</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/064d0c97-2595-4d66-8c49-b50f911eb08d.png&quot;); aspect-ratio: auto; width: 480px; height: 272px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이거 괜찮을걸까</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:40</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/d959fb2e-e380-4f34-aca0-449e77f8c15a.png&quot;); aspect-ratio: auto; width: 373px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>근데 죄송한데 나가서 하면 안될까요 더 위험하지 않아? 못 나가는 거야 지금?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:40</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/9bb2f9a2-0559-4370-9ba0-6cef6f81320c.png&quot;); aspect-ratio: auto; width: 413px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>너 인하랑 무슨 사이 ㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:40</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/d9475fac-78f7-4e8f-98d9-e4a72080f5ba.png&quot;); aspect-ratio: auto; width: 471px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이거 협찬이구나</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:41</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c9f9f3a9-f649-4bb8-9dc6-fe623c2f1436.png&quot;); aspect-ratio: auto; width: 480px; height: 318px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어머 사이 안좋은데?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:42</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/b22dc2a4-9efb-47ba-8cfb-63addb0af3aa.png&quot;); aspect-ratio: auto; width: 480px; height: 280px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>너 남도형이지</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:42</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/aacafa59-f95f-4de0-ac97-7c54606aeadb.png&quot;); aspect-ratio: auto; width: 480px; height: 214px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어 여기 음성 좋은데?</p><p>소장 못하나?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:43</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/9734b556-b4e3-4b7a-a6d3-54542a702c7a.png&quot;); aspect-ratio: auto; width: 480px; height: 336px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>너 팬이지 ㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:43</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/3b41e96a-dd13-463d-abc7-1c94f2c4759b.png&quot;); aspect-ratio: auto; width: 480px; height: 114px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>여기서 더 있나요?MC님?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:44</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/1ea4c819-aa10-4233-93f3-b2873c5b5dd0.png&quot;); aspect-ratio: auto; width: 480px; height: 126px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>대피하라고 했다고? 너네만 노린 거 아냐?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:44</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/7b2d9a72-91c3-48ae-a4bb-49b22970f67f.png)"></span><span class="pimg" style="background-image:url(images/c27ec7b2-c418-4d98-a0f1-4222c786f47c.png)"></span></div><div class="ptxt"><p>어 쉬발 한 분 더 계셨네 죄송합니다</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:44</span></div>
+      <div class="ptxt"><p>무사하다고 했더니 서혜성 호감도 오름 뭐야?ㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:45</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/1ec6d5ab-d240-4331-a76b-e2d02c7f9f75.png&quot;); aspect-ratio: auto; width: 369px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아놔 스마트워치 맞췄다고 전원 호감도 상승 뭔데~~?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:46</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/781e8fce-cc5c-4aea-86cc-e3891905ee3b.png&quot;); aspect-ratio: auto; width: 480px; height: 182px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>일을 그지같이하네?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:47</span></div>
+      <div class="pimgs" data-n="4"><span class="pimg" style="background-image:url(images/9a89b81a-e2d3-45d6-974a-56602b93c7d9.png)"></span><span class="pimg" style="background-image:url(images/ba9fa776-b6c0-44c0-b931-847d134c45df.png)"></span><span class="pimg" style="background-image:url(images/81c7ae0b-9a68-4837-af92-d9e0a89d7d99.png)"></span><span class="pimg" style="background-image:url(images/f196120f-6f32-4909-ae20-e59044d36602.png)"></span></div><div class="ptxt"><p>다행이네요 그거</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:47</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/3786f433-9532-4fb1-beb0-a02c00ab52ec.png&quot;); aspect-ratio: auto; width: 480px; height: 271px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아이고</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:48</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/873c46b7-9c27-4402-93b5-16d613df7627.png&quot;); aspect-ratio: auto; width: 480px; height: 302px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아이고...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:48</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/75464aff-6a72-433c-9e0d-a90edf9c0134.png&quot;); aspect-ratio: auto; width: 480px; height: 326px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>....준수하지 않나? 무섭긴하겠지만..</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:49</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/9d91b9d8-f6f8-40c4-90d6-e104e94e2277.png&quot;); aspect-ratio: auto; width: 480px; height: 229px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>그치...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:50</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/0f023aa3-25c6-40a3-bac6-f69e3f6ae664.png&quot;); aspect-ratio: auto; width: 445px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어라? 무슨일?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:51</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/24cff583-a133-4feb-8db5-d2be852b7671.png&quot;); aspect-ratio: auto; width: 480px; height: 149px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>장세일 이놈봐라 ㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:51</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/8c63a30e-2053-4cf1-b2e0-eeb250d102a6.png&quot;); aspect-ratio: auto; width: 480px; height: 150px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>시발 주영님이랑 관계깎임</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:52</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/20356083-5861-4d0a-b70f-660d57f52a83.png&quot;); aspect-ratio: auto; width: 480px; height: 292px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 개 빡세네</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:52</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/d4c11e35-fea5-4e40-a0ea-8e042ce0d621.png&quot;); aspect-ratio: auto; width: 480px; height: 285px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>시발 주소록 보러왔는데 너 누구야</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:53</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/cb729df6-4833-4d95-81c3-f96761b967e2.png&quot;); aspect-ratio: auto; width: 480px; height: 142px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>핰ㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:54</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/221a254b-7e46-4a28-a1a6-df01d457aeb6.png&quot;); aspect-ratio: auto; width: 440px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>삭제안했는데?ㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:54</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/43c2e98b-50c4-4759-81ec-609712174ab2.png&quot;); aspect-ratio: auto; width: 480px; height: 144px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>앙....</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:56</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/43074d3e-3920-4ff5-b637-5b6e3f9b46fb.png&quot;); aspect-ratio: auto; width: 480px; height: 245px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>일단 무음인거 바꿔달라고 했으니까 바꿀건데</p><p>녹음파일도되면 안되지않나요? 개웃기네</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:58</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/9f71caea-557e-4946-8c48-7488b0c8739b.png&quot;); aspect-ratio: auto; width: 480px; height: 208px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>저기?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:58</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/f362ba64-ffc5-4af6-b5f1-a70a24c0bd5e.png&quot;); aspect-ratio: auto; width: 480px; height: 267px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와 잠시만 나 잠시만 롤백해보자</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:58</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c0e7efaa-7e35-41b9-94ac-d1a4d6c04564.png&quot;); aspect-ratio: auto; width: 480px; height: 231px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와시발 ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 19:59</span></div>
+      <div class="ptxt"><p>롤백해볼게요 진짜 잔해 처맞는지</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:00</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/446a26d2-fe55-4a88-8fdc-17528fefe5a1.png&quot;); aspect-ratio: auto; width: 480px; height: 262px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>ㅅㅂ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:01</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/446e8889-8166-4169-8d62-49446817a675.png)"></span><span class="pimg" style="background-image:url(images/f2f1d0ac-761c-49a6-8e08-f4e9b6bd9b9b.png)"></span></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:01</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/a3d4bd9e-a7a9-466c-9588-fbdbb1200521.png&quot;); aspect-ratio: auto; width: 480px; height: 221px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아씨발</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:01</span></div>
+      <div class="ptxt"><p>아 재밌다 ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:03</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c1db049b-2041-4775-ab15-44d9bd645306.png&quot;); aspect-ratio: auto; width: 480px; height: 189px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>우어?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:04</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/a53d691a-2b37-405c-9201-c873ceadd045.png&quot;); aspect-ratio: auto; width: 480px; height: 194px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>오예 ㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:04</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/bf4b14cd-a942-4f76-8217-b89d5e032165.png&quot;); aspect-ratio: auto; width: 480px; height: 328px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>오호라 역시 스태프는 똑똑하구나</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:06</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/d337bc3e-a1f9-4c51-8533-23fac5d7c56e.png&quot;); aspect-ratio: auto; width: 480px; height: 245px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>흠... 중요해보이는데</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:08</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/dfa463db-1be9-4145-8e26-47b1de5a57ea.png&quot;); aspect-ratio: auto; width: 480px; height: 264px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이거 한도윤임?ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:09</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/bf35b20e-25f1-40e8-a040-811007bd21ff.png&quot;); aspect-ratio: auto; width: 416px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>네? 아뇨?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post spoiled"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:09</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/53903acf-cc00-44aa-a970-57ba7ac868df.png&quot;); aspect-ratio: auto; width: 480px; height: 168px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>히히 ㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:10</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/180cd29f-bbb2-47ff-bdba-83a21659e670.png&quot;); aspect-ratio: auto; width: 480px; height: 279px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와 호감</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:10</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/c04fd4c2-a609-402d-ae66-f9843096ee41.png&quot;); aspect-ratio: auto; width: 480px; height: 230px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>ㅈㄴ 강조하네 ㅋㅋㅋㅋㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:12</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/2e0250c2-0042-4d99-9fc2-f8e257a319b0.png&quot;); aspect-ratio: auto; width: 480px; height: 319px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아니 내가 아끼는 형만 아직 관계 못본 거 실화야?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:13</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/e5c1a374-6d17-4489-aac6-0a258b0e133e.png&quot;); aspect-ratio: auto; width: 419px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아이고</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:14</span></div>
+      <div class="pimgs" data-n="3"><span class="pimg" style="background-image:url(images/9cd50706-342e-4cea-ac88-dd90269b3356.png)"></span><span class="pimg" style="background-image:url(images/6f688b30-d1f0-4efa-bef2-8a967a75de6f.png)"></span><span class="pimg" style="background-image:url(images/829bb7dc-c48d-4f8f-9438-4b9399b58a5a.png)"></span></div><div class="ptxt"><p>아니근데 왜 반응이 이건 관심이고 이건 뭐 어쩌라고 반응인데 구조하자마자 인상이</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:16</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/0dc14d8b-739e-45ee-aa62-46f45591cd83.png&quot;); aspect-ratio: auto; width: 480px; height: 244px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아 괜히 쫄았네 ㅋㅋ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:16</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/19d74f08-d2d1-40bf-9f50-79db90ded19e.png&quot;); aspect-ratio: auto; width: 453px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>형아아아...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:17</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/d2912345-93fb-4749-b1f0-9539fa2658c1.png)"></span><span class="pimg" style="background-image:url(images/245317cc-e0f6-4e6d-aa18-5125abb9ec40.png)"></span></div><div class="ptxt"><p>하</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:17</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/656c0dda-cf5d-4887-801b-44d23c165abd.png&quot;); aspect-ratio: auto; width: 480px; height: 140px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>류승곤님 왜 맨날 이런 것만 하세요?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:18</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/21fd5ab8-b1d3-41c9-8c37-35353892f9a5.png)"></span><span class="pimg" style="background-image:url(images/5cb5ecf6-04cc-43ff-8f65-090920db580d.png)"></span></div><div class="ptxt"><p>따흐흑...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:20</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/db1f176a-e8f2-4eac-846a-e7c2b7940705.png&quot;); aspect-ratio: auto; width: 480px; height: 193px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와 몰랐어</p><p>근데 또 수상해</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:22</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/80c743b7-769c-474c-ad59-67e4c808e377.png&quot;); aspect-ratio: auto; width: 480px; height: 325px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>도윤아 ㅅㅂ 방금 알아왔잖아</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:23</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/07c63581-1840-479a-8fb0-d47e31a75a28.png&quot;); aspect-ratio: auto; width: 480px; height: 217px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>호감도 상승 ㅎㅎ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:25</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/1364cb05-dd45-4a8e-9907-916824a392a4.png&quot;); aspect-ratio: auto; width: 480px; height: 305px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>얘 키 180 나갔다는 거 말 안하는 게 좋을 것 같은데 하</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:27</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/4f7be4ec-e08f-426b-a36c-840f8b0fba16.png&quot;); aspect-ratio: auto; width: 480px; height: 269px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>예~~</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:29</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/1588d26f-fde2-4563-90f3-ceb88a670085.png&quot;); aspect-ratio: auto; width: 480px; height: 288px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와씨 모르겠는데</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:29</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/6896ef79-19b3-4851-8027-525a8dab8e03.png&quot;); aspect-ratio: auto; width: 480px; height: 307px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아씨발죄송해요</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:36</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/e29901da-aa0d-4e6c-8c92-3c6766241034.png&quot;); aspect-ratio: auto; width: 480px; height: 188px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>인기투표를 왜 해 미친</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:37</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/cf641393-415d-400a-aa4e-119eaf54b307.png&quot;); aspect-ratio: auto; width: 480px; height: 261px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>하 ㅅㅂ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:38</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/79091515-2a99-4715-8978-ab9ca2226cc3.png&quot;); aspect-ratio: auto; width: 480px; height: 272px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>병크 레전드 볼 거 개많아</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:39</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/be603bd7-030e-4585-a6b1-433adb607233.png&quot;); aspect-ratio: auto; width: 480px; height: 330px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와 진짜 땡큐</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:40</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/46889705-00cc-417e-839b-132f10d3b16e.png&quot;); aspect-ratio: auto; width: 480px; height: 241px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>스발럼</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:44</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/44d59d1a-cf2b-46d3-8b58-54539de84d70.png&quot;); aspect-ratio: auto; width: 480px; height: 200px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>형 사랑해</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:45</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/3ca4e99b-f68c-419e-95fa-3e89ff302a6d.png&quot;); aspect-ratio: auto; width: 480px; height: 286px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>형아 ㅠㅠㅠㅠ</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:46</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/ed88ea4c-0a4e-479e-be1b-ef6195bee1fd.png&quot;); aspect-ratio: auto; width: 480px; height: 318px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>옆모습 좋은디?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:49</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/7678c34e-6f66-4dea-83dc-b531f1bdb23a.png&quot;); aspect-ratio: auto; width: 480px; height: 298px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>훔</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 20:55</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/2d2ca65d-5774-429b-a2e8-23efffa4491c.png&quot;); aspect-ratio: auto; width: 437px; height: 340px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>와씨 옆모습</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:00</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/22582881-f16b-4890-a307-b604595cc655.png&quot;); aspect-ratio: auto; width: 480px; height: 226px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아씨 내 멘탈 어떡할거야</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:07</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/52266916-b0ad-480f-9630-45bb33e21939.png&quot;); aspect-ratio: auto; width: 480px; height: 86px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>죽어라</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:08</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/ea4fc8f9-1f65-4ba3-b5f6-11c5259ebeec.png&quot;); aspect-ratio: auto; width: 480px; height: 281px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>나 이 옆모습 진짜 좋아함</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:10</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/7734d1db-8a23-4e7b-8e20-fb4ffdb51caf.png&quot;); aspect-ratio: auto; width: 480px; height: 235px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>아이고</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:16</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/e5c50abd-deac-493c-a785-2347f3d2caab.png&quot;); aspect-ratio: auto; width: 480px; height: 270px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>관계 상승하고 나는 멘탈이 바닥이다</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:18</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/7795f060-a47a-4421-b633-d669cc880593.png&quot;); aspect-ratio: auto; width: 480px; height: 281px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>어시발 주영님?</p></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:19</span></div>
+      <div class="pimgs" data-n="2"><span class="pimg" style="background-image:url(images/d131cbeb-daaf-4276-a3cc-394d4a57542b.png)"></span><span class="pimg" style="background-image:url(images/dd892fd2-f5b9-4698-a406-b70a96ea760b.png)"></span></div></div>
+      <button class="pdel" title="삭제">×</button></div><div class="post"><span class="pav"></span>
+      <div class="pbody"><div class="phead"><span class="pname">무무</span><span class="ptime">10월 7일 21:19</span></div>
+      <div class="pimgs" data-n="1"><span class="pimg" style="background-image: url(&quot;images/ba2ab3ed-6cae-49e1-b7ee-4f85c891617e.png&quot;); aspect-ratio: auto; width: 480px; height: 271px; border-radius: 10px;" data-fitted="1"></span></div><div class="ptxt"><p>이거 이래도 되는 거예요?...</p></div></div>
+      <button class="pdel" title="삭제">×</button></div></div>
+    <div class="composer">
+      <span class="pav"></span>
+      <div class="cbox">
+        <textarea class="cta" id="cta" placeholder="타래 이어쓰기…" data-crit-i="4" readonly=""></textarea>
+        <div class="cprev" id="cprev"><button class="imgaddbtn" id="imgaddbtn" title="이미지 첨부 (최대 4장)" style="display: flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L6 20"></path></svg></button><label class="spchk" style="display: flex;"><input type="checkbox" id="spchk" data-crit-i="5" readonly="" tabindex="-1"> 스포일러</label><button class="postbtn" id="postbtn" style="">게시</button></div>
+        <div class="crow2">
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<!-- crit-thread-md: 타래 게시물 마크다운 (볼드/기울임/취소선/코드/헤더/인용/리스트/구분선) -->
+<style>
+  .ptxt h1, .ptxt h2, .ptxt h3 { margin: 4px 0; letter-spacing: -.3px; }
+  .ptxt h1 { font-size: 17px; } .ptxt h2 { font-size: 15px; } .ptxt h3 { font-size: 13.5px; }
+  .ptxt strong, .ptxt code { color: color-mix(in srgb, var(--accent) 60%, var(--text)); }
+  .ptxt code { background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); border-radius: 5px; padding: 0 5px; font-size: 12px; }
+  .ptxt blockquote { margin: 4px 0; padding: 2px 10px; border-left: 3px solid color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--desc); }
+  .ptxt ul { margin: 4px 0; padding-left: 20px; }
+  .ptxt hr { border: none; border-top: 1px solid var(--line); margin: 8px 0; }
+  .ptxt p { margin: 0; }
+</style>
+
+<input type="file" accept="image/*" multiple="" data-crit-i="6" style="display: none;" value="" readonly="" tabindex="-1">
+
+<!-- Crit 앱 임베드용: 다른 페이지의 iframe 안에서 열릴 때는 자체 전역 메뉴를 숨깁니다 -->
+<style>html.crit-embedded .topnav { display: none !important; }</style>
+
+
+<!-- Crit: 상단 전역 메뉴 통일 - 페이지별 콘텐츠 폭(.wrap max-width)과 무관하게 항상 창 전체 폭의
+     고정 헤더로 표시해, 페이지를 오갈 때 메뉴 크기/위치가 변하지 않게 합니다 -->
+<style>
+  html:not(.crit-embedded) .topnav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: var(--bg);
+    padding: 12px 20px 10px !important;
+    margin: 0 !important;
+  }
+  html:not(.crit-embedded) .wrap { padding-top: 58px !important; }
+  /* 모바일 폭에서는 닉네임 배지를 빼고 메뉴 간격/패딩을 줄여서, 항목이 두 줄로 줄바꿈되며
+     깨져 보이던 문제(실제로 겪음)를 없앤다 - 메뉴 개수가 늘어도 한 줄에 들어가게 */
+  @media (max-width: 760px) {
+    html:not(.crit-embedded) .navid { display: none !important; }
+    html:not(.crit-embedded) .topnav { gap: 2px !important; padding: 10px 10px 8px !important; }
+    html:not(.crit-embedded) .topnav a { padding: 4px 8px !important; font-size: 12px !important; }
+  }
+</style>
+
+<!-- Crit: 전역 테마 동기화 - 포인트 컬러/다크·라이트를 모든 화면이 공유합니다.
+     (자관/로그 페이지는 전역 값을 기본값으로만 받고, 그 안의 테마 변경은 해당 페이지에만 적용) -->
+
+
+
+<!-- crit-nav-apply: 환경설정(crit-settings)의 닉네임/아바타/메뉴 순서를 상단 메뉴에 반영 + 메뉴 글씨 확대 -->
+<style>
+  html:not(.crit-embedded) .topnav a { font-size: 14px !important; padding: 4px 15px !important; }
+  html:not(.crit-embedded) .navid { font-size: 15.5px !important; gap: 8px; }
+  .topnav .nava { width: 30px; height: 30px; border-radius: 9px; background-size: cover;
+    background-position: center; display: inline-block; vertical-align: middle; flex: none; }
+</style>
+
+
+<!-- crit-publish: 업데이트 버튼 = 게시본 설정대로 전체 게시 -->
+
+<!-- crit-global-publish: 게시본 설정(순서/배포 체크)대로 모든 페이지를 스냅샷해 한 번에 게시 -->
+
+<!-- crit-scroll-layout: 세로 스크롤이 상단 메뉴를 제외한 아래 영역에만 생기도록 재배치 -->
+<style>
+  html:not(.crit-embedded) body, html.crit-shell-real body { overflow: hidden; height: 100vh; margin: 0; padding: 0 !important;
+    display: flex; flex-direction: column; }
+  html:not(.crit-embedded) body > .topnav, html.crit-shell-real body > .topnav { position: static !important; flex: none; background: var(--bg);
+    height: 54px; box-sizing: border-box; align-items: center; flex-wrap: nowrap; overflow: hidden;
+    padding: 12px 20px 10px !important; margin: 0 !important; }
+  html:not(.crit-embedded) #critscroll, html.crit-shell-real #critscroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  html:not(.crit-embedded) #critscroll > .wrap, html.crit-shell-real #critscroll > .wrap { padding-top: 6px !important; margin-top: 0 !important; }
+  html:not(.crit-embedded) .crit-fixedbar, html.crit-shell-real .crit-fixedbar { flex: none !important; display: block !important;
+    height: auto !important; min-height: 0 !important; overflow: visible;
+    padding-top: 2px !important; padding-bottom: 2px !important; margin-top: 0 !important; margin-bottom: 0 !important; }
+  html:not(.crit-embedded) .crit-fixedbar .toolbar, html.crit-shell-real .crit-fixedbar .toolbar { margin-top: 0 !important; margin-bottom: 0 !important;
+    padding-right: 22px !important; padding-left: 32px !important; }
+  /* 이전 페이지 버튼은 항상 왼쪽에 */
+  html:not(.crit-embedded) .crit-fixedbar .toolbar #backbtn, html.crit-shell-real .crit-fixedbar .toolbar #backbtn { justify-self: start; margin-right: auto; }
+  html:not(.crit-embedded) .crit-fixedbar .toolbar .tleft, html.crit-shell-real .crit-fixedbar .toolbar .tleft { justify-content: flex-start; }
+</style>
+
+<!-- crit-thread-avatars(v2): 개인용 타래 - 아바타·연결선 항상 숨김 -->
+<style>
+  .pav { display: none !important; }
+  .post::before { display: none !important; }
+  .composer .pav { display: none !important; }
+</style>
+<!-- crit-bridge: 게시기(백그라운드 창)가 타래 데이터·화면 전환을 쓸 수 있게 노출 -->
+
+<!-- crit-modal-dragguard: 모달 안에서 드래그를 시작해 바깥에서 놓아도 모달이 닫히지 않게 (전체 모달 공통) -->
+
+<!-- crit-composer: Ctrl+V 이미지 첨부 + 정사각 추가 타일 + 게시 버튼 밀착 -->
+<style>
+  .imgaddbtn { width: 58px; height: 58px; border-radius: 9px; border: 1.5px dashed var(--line) !important;
+    background: none !important; color: var(--dim) !important; display: flex; align-items: center;
+    justify-content: center; padding: 0 !important; cursor: pointer; flex: none; }
+  .imgaddbtn:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+  .imgaddbtn svg { width: 18px; height: 18px; }
+  .cprev { margin-top: 6px !important; }
+  .crow2 { justify-content: flex-end !important; margin-top: 6px !important; }
+</style>
+
+<!-- crit-thread-links: 타래 딥링크(?open=id) + 로그↔타래 연결 정보 공유 + 연결 로그로 바로 이동 -->
+
+<!-- crit-fresh-threads: 신규 시작이면 데모 데이터를 비운다 -->
+
+<!-- crit-composer2: 게시 버튼을 이미지 줄에 통합 + 스포일러 게시물(블러, 클릭 해제) -->
+<style>
+  .crow2 { display: none !important; }
+  .cprev { align-items: center; }
+  #postbtn { flex: none; }
+  .spchk { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--dim);
+    cursor: pointer; user-select: none; margin-left: auto; margin-right: 8px; }
+  .post.spoiled { position: relative; cursor: pointer; }
+  .post.spoiled .ptxt, .post.spoiled .pimgs { filter: blur(7px); }
+  .post.spoiled::after { content: "스포일러 — 클릭해서 보기"; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+    color: color-mix(in srgb, var(--accent) 55%, var(--text)); }
+</style>
+
+<style>/* crit-golog-near: 연결 로그 뱃지를 제목 바로 옆에 */
+.thead .tt { flex: none !important; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gologbtn { padding: 3px 11px !important; font-size: 11.5px !important; font-weight: 700; }
+.thead .teditbtn { order: 9; margin-left: auto; }
+</style>
+<!-- crit-threads-store: 타래 글 실제 저장·복원 (DOM 변화 감지로 자동 저장) -->
+
+<!-- crit-threads-dnd: 타래 카드 드래그 정렬 - 로그 목록 드래그 정렬과 같은 방식으로,
+     드래그 중인 자리에 점선 빈자리가 자연스럽게 생기며 밀려난다 -->
+
+<!-- crit-close-modal: X 버튼 → 트레이 최소화/완전 종료 선택 (기억하기) -->
+
+<!-- crit-fancy-all: 앱의 모든 셀렉트를 테마 드롭다운으로 (동적 생성/표시 전환 포함) -->
+<style>
+  .fwrap { position: relative; flex: 1; display: flex; min-width: 0; }
+  .fwrap .fsel { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px;
+    color: var(--text); font-size: 13px; font-family: inherit; cursor: pointer; text-align: left; min-width: 0; }
+  .fwrap .fsel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fwrap .fsel::after { content: "▾"; font-size: 10px; color: var(--dim); flex: none; }
+  .fwrap .fsel:hover, .fwrap .fsel.open { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .fwrap .fmenu { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 80;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px;
+    box-shadow: 0 10px 30px #0007; max-height: 240px; overflow-y: auto; }
+  .fwrap .fitem { padding: 7px 11px; border-radius: 7px; font-size: 13px; color: var(--text); cursor: pointer;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fwrap .fitem:hover { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); }
+  .fwrap .fitem.on { color: color-mix(in srgb, var(--accent) 65%, var(--text)); font-weight: 700; }
+  .fwrap .fdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+</style>
+
+<!-- crit-spoiler-toggle: 열람한 스포일러 글에 「다시 가리기」 - 내 화면에서 블러 미리보기 -->
+<style>
+  .post { position: relative; }
+  .respoil { position: absolute; right: 8px; top: 6px; z-index: 2;
+    background: var(--panel2); border: 1px solid var(--line); color: var(--dim);
+    border-radius: 999px; padding: 2px 10px; font-size: 10.5px; cursor: pointer; font-family: inherit; }
+  .respoil:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .post.spoiled .respoil { display: none; }
+</style>
+
+<!-- crit-extlink: 외부 링크는 항상 기본 브라우저로 (프로토콜 없는 주소 보정 포함) -->
+
+<!-- crit-thread-linkcheck: 삭제된 로그를 가리키는 타래 연결을 로드 시 정리 -->
+
+<style>/* crit-toolbar-fullbleed: 고정 툴바(아래 구분선 포함)를 화면 전체 폭으로 */
+/* crit-nohscroll: 50vw 계산이 스크롤바 폭을 무시해 생기는 가로 스크롤 차단 */
+html:not(.crit-embedded), html:not(.crit-embedded) body, html.crit-shell-real, html.crit-shell-real body { overflow-x: clip !important; }
+html:not(.crit-embedded) .toolbar, html.crit-shell-real .toolbar {
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  padding-left: calc(50vw - 50%) !important;
+  padding-right: calc(50vw - 50%) !important;
+}
+</style>
+<style>/* crit-noname: 개인용 타래 - 닉네임 숨기고 날짜는 오른쪽 끝으로 */
+.phead { width: 100%; }
+.pname { display: none !important; }
+.ptime { margin-left: auto; }
+</style>
+<style>/* crit-newbtn-listonly: 새 타래 버튼은 목록에서만 */
+#tb:not(.home) #newbtn { display: none !important; }
+</style>
+<style>/* crit-hscrollbar-kill: 어떤 경우에도 문서 가로 스크롤바가 보이지 않게 (내부 컴포넌트 스크롤은 유지) */
+html:not(.crit-embedded)::-webkit-scrollbar:horizontal, html.crit-shell-real::-webkit-scrollbar:horizontal,
+html:not(.crit-embedded) body::-webkit-scrollbar:horizontal, html.crit-shell-real body::-webkit-scrollbar:horizontal { display: none; height: 0; }
+#critscroll { overflow-x: clip !important; }
+</style>
+<!-- crit-pimg-single: 이미지 한 장 게시물 - 원본 비율/크기 존중 (작은 이미지는 확대하지 않음, 최대 480x340) -->
+<style>
+  /* 1장: 이미지 크기에 맞게 수축 + 가운데 정렬 */
+  .pimgs[data-n="1"] { display: grid; width: fit-content; max-width: 100%; margin: 6px auto 0; }
+  .pimgs[data-n="1"] .pimg { border-radius: 10px; border: none; background-color: transparent; }
+  .pimgs[data-n="1"] { border: none; background: none; padding: 0; }
+  /* 2장: 가운데에서 나란히, 3~4장: 트위터식 그리드 (폭 제한 + 가운데) */
+  .pimgs[data-n="2"], .pimgs[data-n="3"], .pimgs[data-n="4"] {
+    max-width: 560px; margin-left: auto; margin-right: auto; }
+</style>
+
+<!-- crit-post-tight: 게시물 글 위 여백 제거 - 시간은 우상단 고정, 본문이 맨 위부터 시작 -->
+<style>
+  .posts .post { min-height: 40px; }
+  .posts .post .phead { position: absolute; top: 13px; right: 6px; width: auto !important; }
+  .posts .post .ptxt { margin-top: 7px; padding-right: 96px; padding-left: 6px; }
+  .posts .post .pimgs { margin-top: 4px; }
+</style>
+<!-- crit-lightbox-nav: 이미지 크게 보기 통합 - 2장 이상이면 좌우 버튼, 이미지 로드 후 위치 보정 -->
+
+<script>(function(){function show(list,idx){var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#000c;display:flex;align-items:center;justify-content:center;cursor:zoom-out";var img=document.createElement("img");img.style.cssText="max-width:86vw;max-height:88vh;border-radius:10px";var navs=[];function pos(){var r=img.getBoundingClientRect();if(r.width<10)return;navs.forEach(function(nb){nb.el.style.width=Math.max(6,nb.dir<0?r.left:(innerWidth-r.right))+"px";});}function render(){img.src=list[idx];}img.addEventListener("load",pos);window.addEventListener("resize",pos);render();img.addEventListener("click",function(e){e.stopPropagation()});ov.appendChild(img);if(list.length>1){[[-1,"M15 18l-6-6 6-6"],[1,"M9 6l6 6-6 6"]].forEach(function(cf){var b=document.createElement("button");b.className="critkeep";b.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+cf[1]+'"/></svg>';b.style.cssText="position:fixed;top:25%;bottom:25%;"+(cf[0]<0?"left:0":"right:0")+";display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#f0edf3;cursor:pointer;z-index:2;transition:background .12s";b.addEventListener("click",function(e){e.stopPropagation();idx=(idx+cf[0]+list.length)%list.length;render();});navs.push({dir:cf[0],el:b});ov.appendChild(b);});requestAnimationFrame(pos);}ov.addEventListener("click",function(e){if(e.target===img)return;ov.remove()});document.body.appendChild(ov);}function bgUrl(el){var bg=getComputedStyle(el).backgroundImage;if(!bg||bg.indexOf("url(")!==0)return null;var u=bg.slice(4,-1);var q=u.charAt(0);if(q===String.fromCharCode(34)||q===String.fromCharCode(39))u=u.slice(1,-1);return u;}document.addEventListener("click",function(e){if(!e.target.closest)return;var g=e.target.closest(".gitem:not(.gadd)");if(g){var gal=g.closest(".gal")||g.parentNode;var all=Array.prototype.slice.call(gal.querySelectorAll(".gitem:not(.gadd)"));var list=all.map(bgUrl).filter(Boolean);var idx=Math.max(0,all.indexOf(g));if(list.length){show(list,Math.min(idx,list.length-1));return;}}var pg=e.target.closest(".pimgs .pimg");if(pg){var pw=pg.closest(".pimgs");var pall=Array.prototype.slice.call(pw.querySelectorAll(".pimg"));var plist=pall.map(bgUrl).filter(Boolean);if(plist.length){show(plist,Math.max(0,pall.indexOf(pg)));return;}}var im=e.target.closest(".pimgs img, .ptxt img, .btext img, .mcontent img, .pv-text img");if(im&&im.src)show([im.src],0);});})();(function(){document.querySelectorAll(".logrow").forEach(function(r){var a=r.querySelector(".llink");if(!a)return;r.style.cursor="pointer";r.addEventListener("click",function(){if(a.getAttribute("target")==="_blank")window.open(a.getAttribute("href"));else location.href=a.getAttribute("href");})});})();(function(){document.addEventListener("click",function(e){var sp=e.target.closest?e.target.closest(".post.spoiled"):null;if(!sp)return;e.preventDefault();e.stopPropagation();var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99998;background:#0008;display:flex;align-items:center;justify-content:center";var md=document.createElement("div");md.style.cssText="background:var(--panel,#1d1b21);border:1px solid var(--line,#34313a);border-radius:14px;padding:20px 22px;width:min(300px,86vw);color:var(--text,#f0edf3)";md.innerHTML="<div style=\"font-size:14px;font-weight:800;margin-bottom:8px\">스포일러</div><div style=\"color:var(--dim,#9a95a0);font-size:12.5px;line-height:1.7;margin-bottom:14px\">스포일러를 확인하시겠습니까?</div>";var row=document.createElement("div");row.style.cssText="display:flex;gap:8px;justify-content:flex-end";function mkB(t,pr){var b=document.createElement("button");b.textContent=t;b.className="critkeep";b.style.cssText="border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;"+(pr?"background:var(--accent,#B26A9E);border:1px solid var(--accent,#B26A9E);color:#fff":"background:var(--panel2,#26242c);border:1px solid var(--line,#34313a);color:var(--text,#f0edf3)");row.appendChild(b);return b;}mkB("취소").addEventListener("click",function(){ov.remove()});mkB("확인",1).addEventListener("click",function(){sp.classList.remove("spoiled");ov.remove()});md.appendChild(row);ov.appendChild(md);ov.addEventListener("click",function(e2){if(e2.target===ov)ov.remove()});document.body.appendChild(ov);},true);})();(function(){var CRIT_BUILD_TS=1791383077124;setTimeout(function(){try{fetch(location.pathname,{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){var m=t.match(/CRIT_BUILD_TS ?= ?(\d+)/);if(!m)return;var latest=Number(m[1]);if(latest>CRIT_BUILD_TS&&sessionStorage.getItem("crit-seen-build")!==String(latest)){sessionStorage.setItem("crit-seen-build",String(latest));location.reload();}}).catch(function(){});}catch(e){}},1200);})();</script><script>var SPD=[0,1,3,4,5,6,66,67,71,72,76];document.querySelectorAll(".posts .post").forEach(function(r,i){if(SPD.indexOf(i)!==-1)r.classList.add("spoiled");});</script><script>(function(){function fit(sp){if(sp.dataset.fitted)return;var bg=sp.style.backgroundImage||"";var m=bg.match(/url\((["\']?)(.*?)\1\)/);if(!m)return;sp.dataset.fitted="1";var im=new Image();im.onload=function(){var maxW=480,maxH=340;var box=sp.closest(".pbody")||sp.parentNode;if(box&&box.clientWidth)maxW=Math.min(maxW,box.clientWidth);var sc=Math.min(1,maxW/im.naturalWidth,maxH/im.naturalHeight);sp.style.aspectRatio="auto";sp.style.width=Math.round(im.naturalWidth*sc)+"px";sp.style.height=Math.round(im.naturalHeight*sc)+"px";sp.style.borderRadius="10px";};im.src=m[2];}document.querySelectorAll('.pimgs[data-n="1"] .pimg').forEach(fit);})();</script></body></html>
